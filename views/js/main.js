@@ -5,7 +5,6 @@ jank-free at 60 frames per second.
 There are two major issues in this code that lead to sub-60fps performance. Can
 you spot and fix both?
 
-
 Built into the code, you'll find a few instances of the User Timing API
 (window.performance), which will be console.log()ing frame rate data into the
 browser console. To learn more about User Timing API, check out:
@@ -421,7 +420,7 @@ var resizePizzas = function(size) {
 
   changeSliderLabel(size);
 
-  // Returns the size difference to change a pizza element from one size to another. Called by changePizzaSlices(size).
+  // Returns the size difference to change a pizza element from one size to another. Called by changePizzaSizes(size).
   function determineDx (elem, size) {
     var oldwidth = elem.offsetWidth;
     var windowwidth = document.querySelector("#randomPizzas").offsetWidth;
@@ -449,11 +448,14 @@ var resizePizzas = function(size) {
   }
 
   // Iterates through pizza elements on the page and changes their widths
-  function changePizzaSizes(size) {
-    for (var i = 0; i < document.querySelectorAll(".randomPizzaContainer").length; i++) {
-      var dx = determineDx(document.querySelectorAll(".randomPizzaContainer")[i], size);
-      var newwidth = (document.querySelectorAll(".randomPizzaContainer")[i].offsetWidth + dx) + 'px';
-      document.querySelectorAll(".randomPizzaContainer")[i].style.width = newwidth;
+  function changePizzaSizes(size)
+  {
+    var pizzasCollection = document.querySelectorAll(".randomPizzaContainer");
+    var dx = determineDx(pizzasCollection[0], size);
+    var newwidth = (pizzasCollection[0].offsetWidth + dx) + 'px';
+
+    for (var i = 0; i < pizzasCollection.length; i++){
+      pizzasCollection[i].style.width = newwidth;
     }
   }
 
@@ -469,8 +471,8 @@ var resizePizzas = function(size) {
 window.performance.mark("mark_start_generating"); // collect timing data
 
 // This for-loop actually creates and appends all of the pizzas when the page loads
+var pizzasDiv = document.getElementById("randomPizzas");
 for (var i = 2; i < 100; i++) {
-  var pizzasDiv = document.getElementById("randomPizzas");
   pizzasDiv.appendChild(pizzaElementGenerator(i));
 }
 
@@ -503,8 +505,10 @@ function updatePositions() {
   window.performance.mark("mark_start_frame");
 
   var items = document.querySelectorAll('.mover');
+      scrollTop = document.body.scrollTop;
+
   for (var i = 0; i < items.length; i++) {
-    var phase = Math.sin((document.body.scrollTop / 1250) + (i % 5));
+    var phase = Math.sin((scrollTop / 1250) + (i % 5));
     items[i].style.left = items[i].basicLeft + 100 * phase + 'px';
   }
 
@@ -521,19 +525,51 @@ function updatePositions() {
 // runs updatePositions on scroll
 window.addEventListener('scroll', updatePositions);
 
+// regenerates new number of sliding pizzas on screen resize
+window.addEventListener('resize', generateSlidingPizzas) 
+
 // Generates the sliding pizzas when the page loads.
-document.addEventListener('DOMContentLoaded', function() {
-  var cols = 8;
-  var s = 256;
-  for (var i = 0; i < 200; i++) {
-    var elem = document.createElement('img');
-    elem.className = 'mover';
-    elem.src = "images/pizza.png";
-    elem.style.height = "100px";
-    elem.style.width = "73.333px";
-    elem.basicLeft = (i % cols) * s;
-    elem.style.top = (Math.floor(i / cols) * s) + 'px';
-    document.querySelector("#movingPizzas1").appendChild(elem);
-  }
+document.addEventListener('DOMContentLoaded', generateSlidingPizzas);
+
+function generateSlidingPizzas(){
+  var s = 256,
+      i = 1,
+      cols = 1,
+      rows = 0,
+      pizzaImg = document.createElement('img'),
+      movingPizzasWrapper = document.querySelector("#movingPizzas1"),
+      elem;
+
+  // Clearing out the content of an element (need on screen resize)
+  movingPizzasWrapper.innerHTML = "";
+
+  pizzaImg.className = 'mover';
+  pizzaImg.src = "images/pizza.png";
+  pizzaImg.style.height = "100px";
+  pizzaImg.style.width = "73.333px";
+
+    // left i to limit max number of moving pizzas
+    while (i < 200)
+    {
+      elem = pizzaImg.cloneNode();
+      elem.basicLeft = cols * s;
+      elem.style.top = rows * s + 'px';
+      movingPizzasWrapper.appendChild(elem);
+
+      i++;
+      cols++;
+
+      // Checking, if the posion of the last pizza is out of viewable area
+      if (parseInt(elem.basicLeft) + parseInt(elem.style.width) > window.innerWidth){
+        cols = 1;
+        rows++;
+      }
+      
+      // Breaking the loop, if pizzas are out of viewable area
+      if (parseInt(elem.style.top) + parseInt(elem.style.height) > window.innerHeight){
+        console.log("i: "+ i + " rows: "+ rows);
+        break;
+      }
+    }
   updatePositions();
-});
+}
