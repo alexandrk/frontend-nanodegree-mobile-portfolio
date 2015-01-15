@@ -531,6 +531,10 @@ window.addEventListener('resize', generateSlidingPizzas);
 // Generates the sliding pizzas when the page loads.
 document.addEventListener('DOMContentLoaded', generateSlidingPizzas);
 
+/**
+ * Generate Sliding Pizzas
+ * Generates only the required number of pizzas for a given screen dimensions
+ */
 function generateSlidingPizzas(){
   var s = 256,
       i = 1,
@@ -548,7 +552,7 @@ function generateSlidingPizzas(){
   pizzaImg.style.height = "100px";
   pizzaImg.style.width = "73.333px";
 
-    // left i to limit max number of moving pizzas
+    // left i to limit max number of moving pizzas to the original 200
     while (i < 200)
     {
       elem = pizzaImg.cloneNode();
