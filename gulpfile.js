@@ -1,18 +1,13 @@
-var gulp = require('gulp'),
-    $ = require('gulp-load-plugins')();
-    browserSync = require('browser-sync');
+var gulp        = require('gulp'),
+    runSequence = require('run-sequence'),
+    merge       = require('merge-stream'),
+    $           = require('gulp-load-plugins')(),
+    browserSync = require('browser-sync'),
+    del         = require('del');
 
-/* Minifying CSS */
-gulp.task('css', function(){
-  gulp.src('./css/*.css')
-    .pipe($.minifyCss())
-    .pipe(gulp.dest('./build/css'))
-    .pipe(browserSync.reload({stream: true}));
-
-  gulp.src('./views/css/*.css')
-    .pipe($.minifyCss())
-    .pipe(gulp.dest('./build/views/css'))
-    .pipe(browserSync.reload({stream: true}));
+/* Removes previously built release */
+gulp.task('clean', function(cb){
+  del(['build/**'], cb);
 });
 
 /* Minifying Javascript */
@@ -28,6 +23,42 @@ gulp.task('js', function(){
     .pipe(browserSync.reload({stream: true}));
 });
 
+/* Minifying CSS */
+gulp.task('css', function(){
+  var css1 = gulp.src('./css/*.css')
+    .pipe($.minifyCss())
+    .pipe(gulp.dest('./build/css'))
+    .pipe(browserSync.reload({stream: true}));
+
+  var css2 = gulp.src('./views/css/*.css')
+    .pipe($.minifyCss())
+    .pipe(gulp.dest('./build/views/css'))
+    .pipe(browserSync.reload({stream: true}));
+
+  return merge(css1, css2);
+});
+
+/* Inline CSS and Minify HTML */
+gulp.task('inline-and-minify', function(){
+  var html1 = gulp.src('./*.html')
+    .pipe($.smoosher({
+      base: './build'
+    }))
+    .pipe($.minifyHtml())
+    .pipe(gulp.dest('./build'))
+    .pipe(browserSync.reload({stream: true}));
+
+  var html2 = gulp.src('./views/*.html')
+    .pipe($.smoosher({
+      base: './build/views'
+    }))
+    .pipe($.minifyHtml())
+    .pipe(gulp.dest('./build/views'))
+    .pipe(browserSync.reload({stream: true}));
+
+  return merge(html1, html2);
+});
+
 /* Compressing Images */
 gulp.task('imgs', function(){
   gulp.src('./img/*')
@@ -39,24 +70,19 @@ gulp.task('imgs', function(){
     .pipe(gulp.dest('./build/views/images'));
 });
 
-/* Minify HTML */
-gulp.task('html', function(){
-  gulp.src('./*.html')
-    .pipe($.minifyHtml())
-    .pipe(gulp.dest('./build'))
-    .pipe(browserSync.reload({stream: true}));
-
-  gulp.src('./views/*.html')
-    .pipe($.minifyHtml())
-    .pipe(gulp.dest('./build/views'))
-    .pipe(browserSync.reload({stream: true}));
+/* Task Bundles, runs tasks one after the other (instead of in parallel) */
+gulp.task('build-html', function(callback){
+  runSequence(
+    'css',
+    'inline-and-minify',
+    callback);
 });
 
-// Watch Tasks
+/* Watch Tasks */
 gulp.task('watch', function(){
-  gulp.watch(['./css/*.css', './views/css/*.css'], ['css']);
+  gulp.watch(['./css/*.css', './views/css/*.css'], ['build-html']);
   gulp.watch(['./js/*.js', './views/js/*.js'], ['js']);
-  gulp.watch(['./*.html', './views/*.html'], ['html']);
+  gulp.watch(['./*.html', './views/*.html'], ['build-html']);
 });
 
 /* Starting BrowserSync Server */
@@ -66,4 +92,13 @@ gulp.task('browser-sync', function(){
   });
 });
 
-gulp.task('default', ['html', 'css', 'js', 'imgs', 'browser-sync', 'watch']);
+gulp.task('default', function(callback){
+  runSequence(
+    'clean',
+    'js',
+    'imgs',
+    'build-html',
+    'browser-sync',
+    'watch',
+    callback);
+});

@@ -451,8 +451,8 @@ var resizePizzas = function(size) {
   function changePizzaSizes(size)
   {
     var pizzasCollection = document.querySelectorAll(".randomPizzaContainer");
-    var dx = determineDx(pizzasCollection[0], size);
-    var newwidth = (pizzasCollection[0].offsetWidth + dx) + 'px';
+        var dx = determineDx(pizzasCollection[0], size);
+        newwidth = (pizzasCollection[0].offsetWidth + dx) + 'px';
 
     for (var i = 0; i < pizzasCollection.length; i++){
       pizzasCollection[i].style.width = newwidth;
@@ -526,7 +526,7 @@ function updatePositions() {
 window.addEventListener('scroll', updatePositions);
 
 // regenerates new number of sliding pizzas on screen resize
-window.addEventListener('resize', generateSlidingPizzas) 
+window.addEventListener('resize', generateSlidingPizzas);
 
 // Generates the sliding pizzas when the page loads.
 document.addEventListener('DOMContentLoaded', generateSlidingPizzas);
@@ -534,7 +534,7 @@ document.addEventListener('DOMContentLoaded', generateSlidingPizzas);
 function generateSlidingPizzas(){
   var s = 256,
       i = 1,
-      cols = 1,
+      cols = 0,
       rows = 0,
       pizzaImg = document.createElement('img'),
       movingPizzasWrapper = document.querySelector("#movingPizzas1"),
@@ -559,14 +559,14 @@ function generateSlidingPizzas(){
       i++;
       cols++;
 
-      // Checking, if the posion of the last pizza is out of viewable area
-      if (parseInt(elem.basicLeft) + parseInt(elem.style.width) > window.innerWidth){
-        cols = 1;
+      // Checking, if the position of the last pizza is out of viewable area
+      if (parseInt(elem.basicLeft) + parseInt(elem.style.width) > window.innerWidth + 200){
+        cols = 0;
         rows++;
       }
-      
+
       // Breaking the loop, if pizzas are out of viewable area
-      if (parseInt(elem.style.top) + parseInt(elem.style.height) > window.innerHeight){
+      if (parseInt(elem.style.top) + parseInt(elem.style.height) > window.innerHeight + 200){
         console.log("i: "+ i + " rows: "+ rows);
         break;
       }
